@@ -55,10 +55,7 @@ public sealed class TuningGridUiaDriver(NspTableNavigator navigator) : ICellDriv
             .Select(e => Number(e.Current.Name)).ToArray();
         var main = navigator.MainWindow;
         Console.WriteLine("[AXES] opening");
-        LiveUi.Click(main, Grid(grid).GetItem(0, 0));
-        MenuNavigator.SendKeysToWindow(main, "{F3}");
-        Thread.Sleep(150);
-        var dialog = LiveUi.Scope(main, "TableAxisSetupForm");
+        var dialog = NativeDialogs.OpenAxisDialog(main, grid);
         try
         {
             Console.WriteLine("[AXES] dialog found");
@@ -92,7 +89,7 @@ public sealed class TuningGridUiaDriver(NspTableNavigator navigator) : ICellDriv
             Console.WriteLine("[AXES] read complete");
             return rows;
         }
-        finally { LiveUi.Click(dialog, LiveUi.Unique(dialog, "CancellingButton", "Cancel", "Button")); }
+        finally { NativeDialogs.CancelAxisDialog(dialog); }
     }
     internal static string[][] GridText(AutomationElement grid)
     {
@@ -156,12 +153,8 @@ public sealed class TuningGridUiaDriver(NspTableNavigator navigator) : ICellDriv
                 var target = Grid(grid).GetItem(row, col);
                 InputSynthesizer.ReleaseAllModifierKeys();
                 InputSynthesizer.Escape(); // cancel pending edits/shrink a multi-cell selection
-                LiveUi.Click(main, target);
-                var focused = AutomationElement.FocusedElement;
-                var inside = false;
-                for (var i = 0; i < 12 && focused is not null; i++, focused = TreeWalker.RawViewWalker.GetParent(focused))
-                    if (System.Windows.Automation.Automation.Compare(focused, grid)) { inside = true; break; }
-                if (!inside) throw new InvalidOperationException("Keyboard focus did not land inside the requested table.");
+                TreeNavigator.SelectGridCell(main, grid, target);
+                LiveUi.RequireFocusWithin(grid);
                 cancellationToken.ThrowIfCancellationRequested();
                 OperationContext.Checkpoint("Ready to write table cell");
                 using var deferredCancellation = OperationContext.DeferCancellation();

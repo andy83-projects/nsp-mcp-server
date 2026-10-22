@@ -29,7 +29,7 @@ Cross-platform logic tests can run on macOS/Linux:
 dotnet test tests/Nsp.Mcp.Tools.Tests
 ```
 
-The imported checkpoint had 67 passing cross-platform logic cases. Tests cover range resolution, exact table identities/aliases, verification, audit, navigation budgets, native input layout, operation ownership, and recovery logic. The Windows automation project has a pure coordinate-math test and a skipped live-window placeholder. The integration suite contains a skipped live-flow placeholder. Do not interpret a green CI build as a real-NSP or vehicle test.
+The initial import had 67 passing cross-platform logic cases; the current suite has 81. Added cases cover clipped-cell navigation plans, distinguishing target failures from collateral edits, structured axis-read/range-preflight refusal before value writes, and bounded journal replacement retries that preserve existing/pending evidence. Tests also cover range resolution, exact table identities/aliases, verification, audit, navigation budgets, native input layout, operation ownership, and recovery logic. The Windows automation project has a pure coordinate-math test and a skipped live-window placeholder. The integration suite contains a skipped live-flow placeholder. Do not interpret a green CI build as a real-NSP or vehicle test.
 
 GitHub Actions builds on Windows and runs the noninteractive tests. It deliberately does not launch NSP, edit a map, contact an ECU, or run bench scripts.
 

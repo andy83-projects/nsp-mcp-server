@@ -18,7 +18,7 @@ There is no direct ECU protocol implementation here. The automation operates an 
 
 Guardrails reduce some errors; they are not guarantees. A range-clamped value may still be a terrible calibration. Readback can confirm the wrong target if identification fails. An empty validation scan does not establish whole-map validity. A timeout or failed post-action check can follow an edit that already happened. Never blindly replay a timed-out write.
 
-The last development checkpoint reported 67 passing unit cases and successful live edit/readback/restore checks on an isolated offline map. Those checks covered particular workflows, not every NSP version or every vehicle. Development used Windows 11 ARM64 in VMware Fusion and Nexus R3 NSP maps with firmware versions 1.35.5/1.36.0. Other combinations need their own validation.
+The current checkpoint has 81 passing logic test cases, plus live single-cell and full-row edit/readback/restore checks on an isolated offline map. These include the far-right columns of a clipped 16-column table and a 2D table regression. Those checks cover particular workflows, not every NSP version or every vehicle. Development used Windows 11 ARM64 in VMware Fusion and Nexus R3 NSP maps with firmware versions 1.35.5/1.36.0. Other combinations need their own validation. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Start here
 

@@ -131,15 +131,41 @@ public static class LiveUi
         // NSP can retain other native grids behind the current page with WS_VISIBLE
         // and IsOffscreen=false. Native hit testing distinguishes the exposed grid
         // without clicking the background grid or relying on a screenshot.
-        var cell = pattern.GetItem(0, 0);
-        var rect = cell.Current.BoundingRectangle;
-        if (cell.Current.IsOffscreen || rect.IsEmpty) return false;
+        // Cell (0,0) can itself be clipped by a scrolled parent. Determine the
+        // exposed native viewport, not the provider's unclipped logical table bounds.
+        var handle = Handle(grid);
+        if (handle == IntPtr.Zero) return false;
+        var rect = NativeBounds(handle);
+        var parent = GetParent(handle);
+        for (var depth = 0; parent != IntPtr.Zero && depth < 32; depth++, parent = GetParent(parent))
+        {
+            rect.Intersect(NativeBounds(parent));
+            if (rect.IsEmpty || rect.Width <= 0 || rect.Height <= 0) return false;
+        }
+        if (parent != IntPtr.Zero) return false;
         using var dpi = new PhysicalDpiScope();
         var hit = WindowFromPoint(new HitPoint { X = (int)(rect.Left + rect.Width / 2), Y = (int)(rect.Top + rect.Height / 2) });
-        var handle = Handle(grid);
         var exposed = handle != IntPtr.Zero && (hit == handle || IsChild(handle, hit));
         Console.WriteLine($"[GRID] hwnd {handle}, native hit {hit}, exposed {exposed}");
         return exposed;
+    }
+
+    public static bool CellIsExposed(AutomationElement grid, AutomationElement cell)
+    {
+        var rect = cell.Current.BoundingRectangle;
+        if (cell.Current.IsOffscreen || rect.IsEmpty || rect.Width <= 0 || rect.Height <= 0) return false;
+        using var dpi = new PhysicalDpiScope();
+        var hit = WindowFromPoint(new HitPoint { X = (int)(rect.Left + rect.Width / 2), Y = (int)(rect.Top + rect.Height / 2) });
+        var handle = Handle(grid);
+        return handle != IntPtr.Zero && (hit == handle || IsChild(handle, hit));
+    }
+
+    public static void RequireFocusWithin(AutomationElement grid)
+    {
+        var focused = AutomationElement.FocusedElement;
+        for (var depth = 0; focused is not null && depth < 16; depth++, focused = TreeWalker.RawViewWalker.GetParent(focused))
+            if (System.Windows.Automation.Automation.Compare(focused, grid)) return;
+        throw new InvalidOperationException("Keyboard focus did not land inside the requested table; no value input sent.");
     }
 
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<(int Root, string Id), (IntPtr Handle, AutomationElement Element)> ScopeHandles = new();

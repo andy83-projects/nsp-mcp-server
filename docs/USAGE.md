@@ -30,9 +30,15 @@ nsp_write_cell(tableId:"Fuel Tuning - Cranking", row:0, col:0,
 
 I/O tools require an exact connection field. The picker adapter uses actual native rows and explicit unassigned markers; it refuses ambiguous or occupied resources instead of silently stealing a pin. Check final pin/resource readback and all per-row options yourself.
 
+NSP can report a table cell as visible even when its bounds are clipped behind another panel. Cell selection now checks the actual native window hit. For clipped cells it uses a visible grid cell as an anchor and bounded native arrows to select the requested logical address. Every write still verifies the entire table and axes. A target mismatch names the requested cell; collateral-change diagnostics identify both addresses. This does not eliminate the need to check the result yourself.
+
+If a table's native axis editor is unavailable, `nsp_get_table_axes` returns `success:false`, `errorCode:axes_unavailable`, and `valuesWritten:false`. Range writes refuse during axis preflight too. In particular, disabled Boost Control tables can remain cell-readable while their axis editor is unavailable. The server does not enable the function or invent axes to work around that restriction.
+
 ## Timeouts and recovery
 
 A disconnected client, Ctrl+D, cancelled request, or failed result does not prove that an edit stopped or was rolled back.
+
+`journal_write_failed` explicitly stating that no request was dispatched means intent could not be durably recorded before worker dispatch. Resolve the file-access problem and check operation status. A storage error after dispatch is different: it retains the recovery gate and uncertain intent. Do not delete either the journal or its pending `.tmp` replacement to bypass the problem.
 
 1. Call `nsp_operation_status`. If an operation is still running, poll its status rather than issuing the mutation again. Retrieve its completed result with the operation ID and `includeResult:true`.
 2. If a worker deadline/failure quarantined the session, call `nsp_recover_worker(confirm:true)`. This restarts only the isolated automation worker, not NSP; it does not replay the request.

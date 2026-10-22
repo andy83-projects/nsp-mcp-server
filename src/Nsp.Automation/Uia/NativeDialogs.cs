@@ -31,7 +31,7 @@ public static class NativeDialogs
     {
         // Use the same real cell selection and F3 path as verified snapshots.
         // Invoking the custom context-menu command can block UIA in a modal call.
-        LiveUi.Click(main, ((GridPattern)grid.GetCurrentPattern(GridPattern.Pattern)).GetItem(0, 0));
+        TreeNavigator.SelectGridCell(main, grid, ((GridPattern)grid.GetCurrentPattern(GridPattern.Pattern)).GetItem(0, 0));
         MenuNavigator.SendKeysToWindow(main, "{F3}");
         return WaitForAxisDialog(main);
     }

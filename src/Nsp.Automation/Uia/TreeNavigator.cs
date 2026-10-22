@@ -19,10 +19,42 @@ public static class TreeNavigator
     [DllImport("user32.dll")] private static extern bool PostMessage(IntPtr hwnd, uint message, IntPtr wparam, IntPtr lparam);
     public static void SelectGridCell(AutomationElement main, AutomationElement grid, AutomationElement cell)
     {
-        // NSP's custom provider can report an Invoke without selecting the cell.
-        // Select the exact live UIA bounds, with physical-DPI/pointer verification.
-        LiveUi.Click(main, cell);
-        Thread.Sleep(150);
+        var item = ((GridItemPattern)cell.GetCurrentPattern(GridItemPattern.Pattern)).Current;
+        if (!System.Windows.Automation.Automation.Compare(item.ContainingGrid, grid))
+            throw new InvalidOperationException("Requested cell does not belong to the verified grid.");
+        var mainHandle = LiveUi.Handle(main);
+        OwnedWindows.DefaultInput(mainHandle);
+        OwnedWindows.RequireForeground(mainHandle);
+        InputSynthesizer.ReleaseAllModifierKeys();
+        InputSynthesizer.Escape();
+        if (LiveUi.CellIsExposed(grid, cell))
+        {
+            LiveUi.Click(main, cell);
+            LiveUi.RequireFocusWithin(grid);
+            return;
+        }
+        // NSP can report IsOffscreen=false and full logical cell bounds behind a
+        // clipped parent/sidebar. Never click those bounds and type into the old
+        // selection. Anchor at an actually exposed cell, then use native arrows.
+        var pattern = (GridPattern)grid.GetCurrentPattern(GridPattern.Pattern);
+        var rows = pattern.Current.RowCount; var columns = pattern.Current.ColumnCount;
+        if (rows < 1 || columns < 1 || (long)rows * columns > 10000)
+            throw new InvalidOperationException("Grid exceeds selection bounds; no value input sent.");
+        for (var r = 0; r < rows; r++)
+            for (var c = 0; c < columns; c++)
+            {
+                Nsp.Automation.Core.OperationContext.Checkpoint("Finding an exposed grid selection anchor");
+                var anchor = pattern.GetItem(r, c);
+                if (!LiveUi.CellIsExposed(grid, anchor)) continue;
+                var keys = Nsp.Automation.Core.GridKeyboardNavigation.Keys(r, c, item.Row, item.Column, rows, columns);
+                LiveUi.Click(main, anchor);
+                LiveUi.RequireFocusWithin(grid);
+                InputSynthesizer.Escape(); // collapse any retained multi-cell selection
+                MenuNavigator.SendKeysToWindow(main, keys);
+                LiveUi.RequireFocusWithin(grid);
+                return;
+            }
+        throw new InvalidOperationException("No exposed native grid cell is available as a selection anchor; no value input sent.");
     }
 
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<IntPtr, AutomationElement> Trees = new();

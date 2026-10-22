@@ -47,9 +47,13 @@ public sealed class TableTools(NspAppController controller, ClampRangeResolver c
         var table = controller.Tables.TryGet(tableId);
         if (table is null) return UnknownTable(tableId);
         tableId = table.TableId;
-        var driver = controller.ResolveCellDriver(tableId);
-        var (rows, cols) = await driver.GetAxesAsync(table, cancellationToken);
-        return new { table.TableId, rowBreakpoints = rows, columnBreakpoints = cols };
+        try
+        {
+            var driver = controller.ResolveCellDriver(tableId);
+            var (rows, cols) = await driver.GetAxesAsync(table, cancellationToken);
+            return new { table.TableId, rowBreakpoints = rows, columnBreakpoints = cols };
+        }
+        catch (Exception ex) when (AxesReadFailed(ex)) { return AxesUnavailable(tableId, ex); }
     }
 
     [McpServerTool(Name = "nsp_read_cell", ReadOnly = true)]
@@ -160,7 +164,9 @@ public sealed class TableTools(NspAppController controller, ClampRangeResolver c
         if (cells.Count > 1000 || cells.Any(c => !double.IsFinite(c.Value)) ||
             cells.Select(c => (c.Row, c.Col)).Distinct().Count() != cells.Count)
             return new { success = false, errorMessage = "A range must contain at most 1000 unique, finite cell requests." };
-        var axes = await controller.ResolveCellDriver(tableId).GetAxesAsync(table, cancellationToken);
+        (double[] RowBreakpoints, double[] ColumnBreakpoints) axes;
+        try { axes = await controller.ResolveCellDriver(tableId).GetAxesAsync(table, cancellationToken); }
+        catch (Exception ex) when (AxesReadFailed(ex)) { return AxesUnavailable(tableId, ex); }
         var rowCount = axes.RowBreakpoints.Length == 0 ? 1 : axes.RowBreakpoints.Length;
         var columnCount = table.HasNoAxes ? 1 : axes.ColumnBreakpoints.Length;
         if (cells.Any(c => c.Row < 0 || c.Row >= rowCount || c.Col < 0 || c.Col >= columnCount))
@@ -198,6 +204,15 @@ public sealed class TableTools(NspAppController controller, ClampRangeResolver c
         errorMessage = "Table is unregistered or its exact identity is ambiguous; no UI action or value write attempted.",
         nextAction = "Call nsp_list_tables. Use a listed tableId, exact helpIdentity or unique displayName. Discovery alone does not register a table.",
         availableTables = controller.Tables.ListTables().Select(t => new { t.TableId, t.HelpIdentity }).ToArray(),
+    };
+
+    private static bool AxesReadFailed(Exception ex) => ex is InvalidOperationException or ArgumentException or System.Runtime.InteropServices.COMException;
+
+    private static object AxesUnavailable(string tableId, Exception ex) => new
+    {
+        success = false, errorCode = "axes_unavailable", tableId, axesAvailable = false, valuesWritten = false,
+        errorMessage = ex.Message,
+        nextAction = "Inspect the exact table and open dialogs in NSP. Its axis editor may be unavailable while a function is disabled. No function was enabled and no values were written; do not infer axis values or replay an edit.",
     };
 
     private async Task LogWriteAsync(

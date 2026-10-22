@@ -17,6 +17,26 @@ public sealed class TableWriteVerifierTests
     public void RejectsSilentNoOp() => Assert.NotNull(TableWriteVerifier.Verify(Snapshot(3.7, 3.4, 3.1), Snapshot(3.7, 3.4, 3.1), 0, 2, 3.2));
 
     [Fact]
+    public void MisroutedWriteReportsTheRequestedCellBeforeCollateralDamage()
+    {
+        var before = new TableSnapshotData([], Enumerable.Range(0, 16).Select(x => (double)x).ToArray(),
+            [Enumerable.Repeat(10d, 16).ToArray()]);
+        var afterValues = before.Values[0].ToArray();
+        afterValues[0] = 15;
+        var error = TableWriteVerifier.Verify(before, before with { Values = [afterValues] }, 0, 14, 15);
+        Assert.Contains("Requested cell (0,14)", error);
+        Assert.Contains("entire table", error);
+    }
+
+    [Fact]
+    public void CollateralChangeNamesBothActualAndRequestedAddresses()
+    {
+        var error = TableWriteVerifier.Verify(Snapshot(3.7, 3.4, 3.1), Snapshot(10, 3.4, 3.2), 0, 2, 3.2);
+        Assert.Contains("Unintended change at (0,0)", error);
+        Assert.Contains("requested cell (0,2)", error);
+    }
+
+    [Fact]
     public void RejectsChangedAxes()
     {
         var after = Snapshot(3.7, 3.4, 3.2) with { Columns = [8, 10, 14] };

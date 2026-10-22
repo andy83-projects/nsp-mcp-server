@@ -43,10 +43,7 @@ public sealed class WorkerSupervisor : IAsyncDisposable
     { lock (sync) { state = WorkerRecoveryPolicy.Quarantine(state, null, "Worker startup failed: " + reason); Persist(); } }
     private void Persist()
     {
-        var temp = journalPath + ".tmp";
-        using (var stream = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None))
-        { JsonSerializer.Serialize(stream, state, JsonOptions); stream.Flush(true); }
-        File.Move(temp, journalPath, true);
+        DurableJournalFile.Write(journalPath, state, JsonOptions);
     }
     public object Status()
     {
@@ -125,7 +122,16 @@ public sealed class WorkerSupervisor : IAsyncDisposable
             if (state.InFlight is not null) return Error("automation_busy", "Another worker request is still owned; poll operation status.");
             current = worker;
             intent = new(operations.Active?.Id ?? Guid.NewGuid().ToString("N"), request.Name, JsonSerializer.Serialize(request.Arguments), DateTimeOffset.UtcNow);
-            state = state with { InFlight = intent }; Persist(); // durable intent before dispatch
+            var previous = state;
+            state = state with { InFlight = intent };
+            try { Persist(); } // durable intent before dispatch
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Nothing has been sent to the worker. A failed journal write must
+                // not strand a phantom owner and block recovery/normal requests.
+                state = previous;
+                return Error("journal_write_failed", "Could not persist the request intent; no worker request or UI action was dispatched. Resolve journal file access before retrying. " + ex.Message);
+            }
         }
         Task<CallToolResult>? call = null;
         using var monitorStop = new CancellationTokenSource();
@@ -151,7 +157,17 @@ public sealed class WorkerSupervisor : IAsyncDisposable
             _ = call?.ContinueWith(t => { _ = t.Exception; }, TaskContinuationOptions.OnlyOnFaulted);
             lock (sync)
             {
-                if (ReferenceEquals(worker, current)) { state = WorkerRecoveryPolicy.Quarantine(state, intent, ex is TimeoutException ? "Worker call exceeded its deadline; it may still be running." : "Worker transport failed: " + ex.Message); Persist(); }
+                if (ReferenceEquals(worker, current))
+                {
+                    state = WorkerRecoveryPolicy.Quarantine(state, intent, ex is TimeoutException ? "Worker call exceeded its deadline; it may still be running." : "Worker call or outcome recording failed: " + ex.Message);
+                    try { Persist(); }
+                    catch (Exception storage) when (storage is IOException or UnauthorizedAccessException)
+                    {
+                        // The last durable in-flight intent remains on disk. Keep
+                        // the in-memory gate closed too; never turn this into ready.
+                        state = state with { Reason = state.Reason + " Recovery state could not be persisted: " + storage.Message + ". Retain the existing journal and inspect the interrupted outcome." };
+                    }
+                }
             }
             return Error(ex is TimeoutException ? "worker_timeout" : "worker_transport_failed", NextAction());
         }

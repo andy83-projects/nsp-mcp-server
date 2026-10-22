@@ -132,16 +132,26 @@ public sealed class NspUiaAppDriver(
         }
 
         var window = ResolveWindow();
+        var identity = window.Title.TrimEnd(' ', '*');
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        using var deferredCancellation = OperationContext.DeferCancellation();
         MenuNavigator.SendKeysToWindow(window.Window, "^s");
-        Thread.Sleep(300); // bounded settle for the save/title redraw; replace with a real poll loop in Phase 1
-
-        var refreshed = windowLocator.Locate(options.ExpectedOpenFileName);
-        _cachedWindow = refreshed;
-        var saved = !refreshed.Title.Contains('*');
-
-        return Task.FromResult(saved
-            ? AutomationResult.Succeeded("uia", refreshed.Title)
-            : AutomationResult.Failed("uia", $"Title still shows unsaved changes after Ctrl+S: '{refreshed.Title}'"));
+        do
+        {
+            OperationContext.Checkpoint("Verifying saved map title");
+            var refreshed = windowLocator.Locate(options.ExpectedOpenFileName);
+            _cachedWindow = refreshed;
+            if (refreshed.ProcessId != window.ProcessId ||
+                LiveUi.Handle(refreshed.Window) != LiveUi.Handle(window.Window) ||
+                refreshed.Title.TrimEnd(' ', '*') != identity)
+                return Task.FromResult(AutomationResult.Failed("uia", "Map/window identity changed during save; inspect the actual saved outcome before retrying."));
+            if (OwnedWindows.Dialogs(LiveUi.Handle(refreshed.Window)).Length != 0)
+                return Task.FromResult(AutomationResult.Failed("uia", "An NSP dialog is open after Ctrl+S; inspect it before retrying. Save outcome is not verified."));
+            if (!refreshed.Title.Contains('*'))
+                return Task.FromResult(AutomationResult.Succeeded("uia", refreshed.Title));
+            Thread.Sleep(100);
+        } while (watch.Elapsed < TimeSpan.FromSeconds(5));
+        return Task.FromResult(AutomationResult.Failed("uia", "Save outcome was not verified within five seconds. It may complete later; inspect the current title and dialogs before retrying."));
     }
 
     public Task<AutomationResult> OpenFunctionManagerAsync(CancellationToken cancellationToken = default)

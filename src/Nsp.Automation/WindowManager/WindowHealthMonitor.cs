@@ -22,6 +22,14 @@ public sealed class WindowHealthMonitor(NspWindowLocator locator)
         }
     }
 
-    public NspWindowHandle EnsureAlive(NspWindowHandle handle, string? expectedOpenFileName) =>
-        IsAlive(handle) ? handle : locator.Locate(expectedOpenFileName);
+    public NspWindowHandle EnsureAlive(NspWindowHandle handle, string? expectedOpenFileName)
+    {
+        // A living HWND does not make its old title/map/dirty state current. Resolve
+        // the native identity on every call, including the configured map filter.
+        var current = locator.LocateNative(expectedOpenFileName);
+        return current.ProcessId == handle.ProcessId &&
+            current.Handle == Nsp.Automation.Uia.LiveUi.Handle(handle.Window) && IsAlive(handle)
+            ? handle with { Title = current.Title }
+            : locator.Locate(expectedOpenFileName);
+    }
 }
