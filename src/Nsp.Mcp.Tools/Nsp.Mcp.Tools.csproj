@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Nsp.TuningTables\Nsp.TuningTables.csproj" />
+    <ProjectReference Include="..\Nsp.Audit\Nsp.Audit.csproj" />
+    <ProjectReference Include="..\Nsp.Automation.Abstractions\Nsp.Automation.Abstractions.csproj" />
+  </ItemGroup>
+
+  <!--
+    Deliberately does NOT reference Nsp.Automation (net10.0-windows, the concrete UIA/
+    fallback drivers) — only Nsp.Automation.Abstractions (net10.0, interfaces + the
+    NspAppController facade). That keeps this project, and its tests, buildable on any
+    platform. Nsp.Mcp.Server (which only ever runs on the Windows VM) wires the real
+    Nsp.Automation implementation in at startup via DI.
+  -->
+
+</Project>

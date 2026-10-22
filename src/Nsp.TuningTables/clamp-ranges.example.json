@@ -1,0 +1,10 @@
+{
+  "_comment": "Schema example only — no real tuning tables are configured in the build yet. Copy this to clamp-ranges.json next to the server and fill in real tables once they exist. nsp_write_cell refuses to write any table with no entry here AND no live-UI range.",
+  "tables": {
+    "example_fuel_ve_table": {
+      "min": 0.0,
+      "max": 100.0,
+      "source": "unverified default — placeholder, replace before real use"
+    }
+  }
+}

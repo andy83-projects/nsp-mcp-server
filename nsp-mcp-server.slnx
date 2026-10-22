@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Nsp.Audit/Nsp.Audit.csproj" />
+    <Project Path="src/Nsp.Automation.Abstractions/Nsp.Automation.Abstractions.csproj" />
+    <Project Path="src/Nsp.Automation/Nsp.Automation.csproj" />
+    <Project Path="src/Nsp.Mcp.Server/Nsp.Mcp.Server.csproj" />
+    <Project Path="src/Nsp.Mcp.Tools/Nsp.Mcp.Tools.csproj" />
+    <Project Path="src/Nsp.TuningTables/Nsp.TuningTables.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Nsp.Automation.Tests/Nsp.Automation.Tests.csproj" />
+    <Project Path="tests/Nsp.Integration.Tests/Nsp.Integration.Tests.csproj" />
+    <Project Path="tests/Nsp.Mcp.Tools.Tests/Nsp.Mcp.Tools.Tests.csproj" />
+  </Folder>
+</Solution>

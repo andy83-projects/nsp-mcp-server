@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!--
+    Targets net10.0-windows because it wires up the concrete Nsp.Automation (UIA/fallback)
+    implementations at startup. This project only ever runs inside the Windows VM, next to
+    NSP itself — see ../../docs/RUNBOOK.md for build/run instructions there.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="2.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Nsp.Mcp.Tools\Nsp.Mcp.Tools.csproj" />
+    <ProjectReference Include="..\Nsp.Automation\Nsp.Automation.csproj" />
+    <ProjectReference Include="..\Nsp.Automation.Abstractions\Nsp.Automation.Abstractions.csproj" />
+    <ProjectReference Include="..\Nsp.TuningTables\Nsp.TuningTables.csproj" />
+    <ProjectReference Include="..\Nsp.Audit\Nsp.Audit.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

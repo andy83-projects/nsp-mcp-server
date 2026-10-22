@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Windows-only; drives the real MCP server end-to-end against the real NSP app and the
+       existing offline draft .nexmap. Gated behind NSP_INTEGRATION_TESTS=1 so it never runs
+       by accident on a machine without the VM/app. See ../../docs/RUNBOOK.md. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+  <!--
+    Deliberately no ProjectReference to Nsp.Mcp.Server: these tests drive the server as a
+    separate running process over its SSE endpoint (the real end-to-end path per the plan's
+    Phase 6), not in-process — so they need an HTTP/MCP client package, not a reference to
+    the host executable. Add one (e.g. the MCP client SDK) when these are implemented.
+  -->
+
+</Project>

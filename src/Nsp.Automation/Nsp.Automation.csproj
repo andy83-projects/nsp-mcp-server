@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Windows-only by necessity: System.Windows.Automation (UIA) and the SendInput/BitBlt
+    P/Invoke calls in the Fallback/ drivers only exist on Windows. This project will not
+    build on the macOS dev host — that's expected. Build and run it on the Windows VM,
+    where NSP itself runs. See ../../docs/RUNBOOK.md.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Nsp.TuningTables\Nsp.TuningTables.csproj" />
+    <ProjectReference Include="..\Nsp.Automation.Abstractions\Nsp.Automation.Abstractions.csproj" />
+    <ProjectReference Include="..\Nsp.Audit\Nsp.Audit.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- System.Drawing.Common is auto-available on net10.0-windows now; no explicit reference needed. -->
+    <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
+  </ItemGroup>
+
+</Project>
