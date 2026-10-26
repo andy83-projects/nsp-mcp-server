@@ -1,5 +1,7 @@
 # Deploy from source
 
+For precompiled, self-contained **Windows ARM64** and **Windows x86 (32-bit)** packages, see [GitHub Releases](https://github.com/andy83-projects/nsp-mcp-server/releases) and the [binary quick-start](../packaging/QUICKSTART.md). These packages do not require Git or a separate .NET installation. The source-build requirements below apply when building yourself.
+
 This is experimental software. First use a disposable offline map, keep the ECU disconnected, and independently check the application after every edit. [Read the verification workflow](USAGE.md) before granting an AI access.
 
 ## Requirements

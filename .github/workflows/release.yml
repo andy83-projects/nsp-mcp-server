@@ -1,0 +1,87 @@
+name: Windows ZIP release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Prerelease version (without v)'
+        required: true
+        default: '0.1.0-alpha.1'
+        type: string
+  push:
+    tags:
+      - 'v*'
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runtime: win-arm64
+            runner: windows-11-arm
+          - runtime: win-x86
+            runner: windows-latest
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Determine package version
+        shell: pwsh
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          $version=if($env:REF_TYPE -eq 'tag'){$env:REF_NAME -replace '^v',''}else{$env:INPUT_VERSION}
+          if($version -notmatch '^\d+\.\d+\.\d+(-[A-Za-z0-9.-]+)?$'){throw "Invalid release version: $version"}
+          "PACKAGE_VERSION=$version" >> $env:GITHUB_ENV
+      - run: dotnet test tests/Nsp.Mcp.Tools.Tests -c Release --logger trx --results-directory TestResults
+      - run: dotnet test tests/Nsp.Automation.Tests -c Release --logger trx --results-directory TestResults
+      - name: Build self-contained ZIP
+        shell: pwsh
+        run: ./scripts/Build-Release.ps1 -Runtime '${{ matrix.runtime }}' -Version $env:PACKAGE_VERSION
+      - name: Test extracted ZIP without NSP
+        shell: pwsh
+        run: ./scripts/Test-ReleasePackage.ps1 -ZipPath "out/releases/nsp-mcp-server-${env:PACKAGE_VERSION}-${{ matrix.runtime }}.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-${{ matrix.runtime }}
+          path: |
+            out/releases/*.zip
+            out/releases/*.sha256
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.runtime }}
+          path: TestResults/*.trx
+  publish:
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: package-*
+          path: release-assets
+          merge-multiple: true
+      - name: Publish tested ZIPs as a prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+          SOURCE_COMMIT: ${{ github.sha }}
+        run: |
+          if [ "$REF_TYPE" = tag ]; then RELEASE_TAG="$REF_NAME"; else RELEASE_TAG="v$INPUT_VERSION"; fi
+          gh release create "$RELEASE_TAG" release-assets/* --target "$SOURCE_COMMIT" --prerelease --title "NSP MCP $RELEASE_TAG (experimental)" --notes-file packaging/RELEASE-NOTES.md
