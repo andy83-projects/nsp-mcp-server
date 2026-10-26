@@ -26,6 +26,9 @@ try {
         Copy-Item -LiteralPath (Join-Path $root $file) -Destination $package
     }
     Copy-Item -LiteralPath (Join-Path $root 'docs') -Destination $package -Recurse
+    $skillsDirectory=Join-Path $package 'skills'
+    New-Item -ItemType Directory -Path $skillsDirectory | Out-Null
+    Copy-Item -LiteralPath (Join-Path $root '.agents/skills/haltech-nsp') -Destination $skillsDirectory -Recurse
     Copy-Item -LiteralPath (Join-Path $root 'src/Nsp.TuningTables/clamp-ranges.example.json') -Destination $package
     $commit=(& git rev-parse HEAD).Trim()
     if($LASTEXITCODE -ne 0){throw 'Unable to identify the source commit.'}

@@ -5,6 +5,14 @@ on:
 permissions:
   contents: read
 jobs:
+  skill:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build companion skill ZIP
+        run: python3 scripts/build_skill_package.py --version "0.1.0-ci.$GITHUB_RUN_NUMBER"
+      - name: Check archive integrity
+        run: python3 -m zipfile -t "out/releases/haltech-nsp-skill-0.1.0-ci.$GITHUB_RUN_NUMBER.zip"
   windows:
     runs-on: windows-latest
     steps:

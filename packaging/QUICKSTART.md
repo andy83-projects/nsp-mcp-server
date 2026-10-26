@@ -20,6 +20,11 @@ Haltech NSP must already be installed. NSP and vehicle maps are not included.
 5. Follow **docs/CLIENTS.md** to connect Codex or Claude Code. Begin with the
    read-only connection checks there before attempting any changes.
 
+An optional **haltech-nsp** companion skill is available on the matching GitHub
+release. Install it on the AI client machine following **docs/SKILL.md** from the
+updated source or the skill ZIP's **INSTALL.md**. Future server packages also
+include the skill under **skills/haltech-nsp**.
+
 For another computer or a VM host, follow the SSH tunnel instructions in
 **docs/DEPLOYMENT.md**. Keep the default loopback binding: the server has no
 authentication or TLS. Do not expose it to the internet.

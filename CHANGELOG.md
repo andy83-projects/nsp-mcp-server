@@ -1,5 +1,18 @@
 # Changes
 
+## 2026-10-26 — companion NSP skill
+
+Added the architecture-independent `haltech-nsp` skill for Codex and Claude Code,
+with focused connection, structured-edit, verification, and interrupted-operation
+guidance. The skill is distributed as an additional ZIP alongside server
+v0.1.0-alpha.1; the existing server binaries are unchanged. Future binary packages
+include the skill and the release workflow also builds a standalone skill ZIP.
+
+Validated skill metadata, reference links, and tool names against this source.
+Independent offline scenarios covered a clamped preview, a timed-out partial range
+write with insufficient recovery evidence, readable cells with unavailable axes,
+and an authorized exact edit/save. No live NSP edit was performed for skill testing.
+
 ## 2026-10-22 — clipped table cells and unavailable axes
 
 Fixed a reproduced case where selecting a clipped column of a wide 1D table clicked outside the visible grid and sent the requested value to the previously selected cell. NSP's UIA provider reported unclipped logical bounds and `IsOffscreen=false`. Grid selection now checks the native hit target and, when necessary, navigates from an exposed anchor cell using bounded native arrows. Focus is established before keyboard input. Grid discovery also respects native parent clipping instead of relying on cell (0,0) always being visible.

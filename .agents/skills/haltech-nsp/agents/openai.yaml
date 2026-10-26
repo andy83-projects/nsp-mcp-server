@@ -1,0 +1,9 @@
+interface:
+  display_name: "Haltech NSP"
+  short_description: "Inspect and edit NSP maps through MCP"
+  default_prompt: "Use $haltech-nsp to check the connected NSP map and worker status, then carry out my requested map work."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "haltech"
+      description: "NSP MCP server on the Windows desktop running Haltech NSP; use the user's configured connection."

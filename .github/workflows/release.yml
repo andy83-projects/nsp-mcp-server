@@ -62,8 +62,24 @@ jobs:
         with:
           name: test-results-${{ matrix.runtime }}
           path: TestResults/*.trx
+  skill:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package companion skill
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          REF_NAME: ${{ github.ref_name }}
+        run: python3 scripts/build_skill_package.py --version "${INPUT_VERSION:-${REF_NAME#v}}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-skill
+          path: |
+            out/releases/haltech-nsp-skill-*.zip
+            out/releases/haltech-nsp-skill-*.sha256
+          if-no-files-found: error
   publish:
-    needs: package
+    needs: [package, skill]
     runs-on: ubuntu-latest
     permissions:
       contents: write

@@ -24,6 +24,8 @@ The current checkpoint has 81 passing logic test cases, plus live single-cell an
 
 Precompiled Windows ARM64 and x86 (32-bit) ZIPs are distributed through [GitHub Releases](https://github.com/andy83-projects/nsp-mcp-server/releases). They bundle the .NET runtime. Extract the whole package and follow its [quick-start guide](packaging/QUICKSTART.md); NSP must be installed separately. Source build instructions follow below.
 
+Install the optional [Haltech NSP companion skill](docs/SKILL.md) on your AI client for tool selection, edit verification, and timeout recovery. A standalone skill ZIP is available alongside the server binaries; invoke it as `$haltech-nsp` in Codex or `/haltech-nsp` in Claude Code.
+
 1. [Deploy on Windows](docs/DEPLOYMENT.md): prerequisites, build from source, interactive desktop, startup, network access, and updates.
 2. [Connect Codex or Claude](docs/CLIENTS.md): direct Streamable HTTP setup and first connection checks.
 3. [Use and verify edits](docs/USAGE.md): offline workflow, table IDs, examples, recovery, and known limits.

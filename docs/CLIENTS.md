@@ -4,6 +4,8 @@ First [run the server](DEPLOYMENT.md) on the same interactive Windows desktop as
 
 This project uses Streamable HTTP. It does not launch through stdio, implement OAuth, or include a third-party bridge. Keep normal client tool approvals enabled. A tool's `confirm=true` parameter is an argument an AI can send, not proof that a human reviewed the edit.
 
+The optional [haltech-nsp skill](SKILL.md) provides operating and recovery instructions for these tools. Install it on the client machine after connecting the server; it works with either server architecture.
+
 ## Codex
 
 Register the running HTTP endpoint:
