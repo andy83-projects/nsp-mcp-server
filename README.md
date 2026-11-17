@@ -2,6 +2,8 @@
 
 An experimental Model Context Protocol (MCP) server that lets **Codex or Claude Code inspect and edit Haltech NSP through the Windows desktop UI**. This repository contains the C# source, tests, and PowerShell scripts needed to build and run it. It is an independent community project, not an official Haltech product.
 
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-andy83-FFDD00?style=flat&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/andy83)
+
 > **WORK IN PROGRESS — CHECK EVERYTHING.** The server can make mistakes, the AI can make mistakes, and a successful tool response does not prove that an ECU calibration is correct or safe. Independently verify every setting, pin, table, unit, and saved result in NSP. Start with an offline, disposable map copy. Never use an AI's assurance as approval to upload a map, run an engine, or energize outputs.
 
 ## What it does
